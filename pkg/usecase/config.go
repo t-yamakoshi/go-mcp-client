@@ -6,34 +6,34 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/config"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/config"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/entity"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/repository"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/infrastructure"
 )
 
-// ConfigUseCase defines the interface for configuration business logic
-type ConfigUseCase interface {
+var _ IFConfigUsecase = (*ConfigUsecase)(nil)
+
+type IFConfigUsecase interface {
 	LoadConfiguration(ctx context.Context, configPath string) (*config.Config, error)
 	SaveConfiguration(ctx context.Context, config *config.Config, configPath string) error
-	GetDefaultConfiguration(ctx context.Context) *config.Config
 	ValidateConfiguration(ctx context.Context, config *config.Config) error
 	UpdateConfiguration(ctx context.Context, config *config.Config, updates map[string]interface{}) error
+	GetDefaultConfiguration(ctx context.Context) *config.Config
 }
 
-// configUseCase implements the ConfigUseCase interface
-type configUseCase struct {
-	configRepo repository.ConfigRepository
+type ConfigUsecase struct {
+	configRepo repository.IFConfigRepository
 }
 
-// NewConfigUseCase creates a new configuration use case
-func NewConfigUseCase(configRepo repository.ConfigRepository) ConfigUseCase {
-	return &configUseCase{
+func NewConfigUsecase(configRepo *infrastructure.ConfigRepositoryImpl) *ConfigUsecase {
+	return &ConfigUsecase{
 		configRepo: configRepo,
 	}
 }
 
 // LoadConfiguration loads configuration from file or creates default
-func (uc *configUseCase) LoadConfiguration(ctx context.Context, configPath string) (*config.Config, error) {
+func (uc *ConfigUsecase) LoadConfiguration(ctx context.Context, configPath string) (*config.Config, error) {
 	// Check if file exists
 	if _, err := os.Stat(configPath); err == nil {
 		// File exists, load it
@@ -56,7 +56,7 @@ func (uc *configUseCase) LoadConfiguration(ctx context.Context, configPath strin
 }
 
 // SaveConfiguration saves configuration to file
-func (uc *configUseCase) SaveConfiguration(ctx context.Context, config *config.Config, configPath string) error {
+func (uc *ConfigUsecase) SaveConfiguration(ctx context.Context, config *config.Config, configPath string) error {
 	// Validate configuration before saving
 	if err := uc.ValidateConfiguration(ctx, config); err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
@@ -72,7 +72,7 @@ func (uc *configUseCase) SaveConfiguration(ctx context.Context, config *config.C
 }
 
 // GetDefaultConfiguration returns the default configuration
-func (uc *configUseCase) GetDefaultConfiguration(ctx context.Context) *config.Config {
+func (uc *ConfigUsecase) GetDefaultConfiguration(ctx context.Context) *config.Config {
 	return &config.Config{
 		ServerURL: "ws://localhost:3000",
 		ClientInfo: entity.ClientInfo{
@@ -84,7 +84,7 @@ func (uc *configUseCase) GetDefaultConfiguration(ctx context.Context) *config.Co
 }
 
 // ValidateConfiguration validates the configuration
-func (uc *configUseCase) ValidateConfiguration(ctx context.Context, config *config.Config) error {
+func (uc *ConfigUsecase) ValidateConfiguration(ctx context.Context, config *config.Config) error {
 	if config == nil {
 		return fmt.Errorf("configuration cannot be nil")
 	}
@@ -117,7 +117,7 @@ func (uc *configUseCase) ValidateConfiguration(ctx context.Context, config *conf
 }
 
 // UpdateConfiguration updates specific configuration fields
-func (uc *configUseCase) UpdateConfiguration(ctx context.Context, config *config.Config, updates map[string]interface{}) error {
+func (uc *ConfigUsecase) UpdateConfiguration(ctx context.Context, config *config.Config, updates map[string]interface{}) error {
 	if config == nil {
 		return fmt.Errorf("configuration cannot be nil")
 	}

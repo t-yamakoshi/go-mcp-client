@@ -4,21 +4,23 @@
 //go:build !wireinject
 // +build !wireinject
 
-package provider
+package di
 
 import (
 	"github.com/t-yamakoshi/go-mcp-client/pkg/infrastructure"
-	"github.com/t-yamakoshi/go-mcp-client/pkg/interfaces"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/interfaces/cli"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/interfaces/message"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/usecase"
 )
 
 // Injectors from wire.go:
 
-func InitializeCLIHandler(configPath string) interfaces.CLIHandler {
-	mcpRepositoryImpl := infrastructure.NewMCPRepositoryImpl()
+func InitializeCLIHandler(configPath string) *cli.CliHandler {
 	configRepositoryImpl := infrastructure.NewConfigRepositoryImpl(configPath)
-	mcpUseCase := usecase.NewMCPUseCase(mcpRepositoryImpl, configRepositoryImpl)
-	configUseCase := usecase.NewConfigUseCase(configRepositoryImpl)
-	cliHandler := interfaces.NewCLIHandler(mcpUseCase, configUseCase)
+	mcpRepositoryImpl := infrastructure.NewMCPRepositoryImpl()
+	mcpUsecase := usecase.NewMCPUsecase(configRepositoryImpl, mcpRepositoryImpl)
+	configUsecase := usecase.NewConfigUsecase(configRepositoryImpl)
+	messageHandler := message.NewMessageHandler()
+	cliHandler := cli.NewCLIHandler(mcpUsecase, configUsecase, messageHandler)
 	return cliHandler
 }

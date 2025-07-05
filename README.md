@@ -1,47 +1,49 @@
-# Go MCP Client
+# Go MCP クライアント
 
-A Go implementation of the Model Context Protocol (MCP) client built with Clean Architecture principles.
+クリーンアーキテクチャの原則に従って構築された Model Context Protocol (MCP) クライアントの Go 実装です。
 
-## Overview
+## 概要
 
-This project implements a client for the Model Context Protocol, which allows AI assistants to connect to external data sources and tools through a standardized interface. The application is structured following Clean Architecture principles to ensure maintainability, testability, and separation of concerns.
+このプロジェクトは、AI アシスタントが外部データソースやツールに標準化されたインターフェースを通じて接続することを可能にする Model Context Protocol のクライアントを実装しています。アプリケーションは保守性、テスタビリティ、関心の分離を確保するためにクリーンアーキテクチャの原則に従って構造化されています。
 
-## Architecture
+## アーキテクチャ
 
-This project follows Clean Architecture principles with the following layers:
+このプロジェクトは以下の層でクリーンアーキテクチャの原則に従っています：
 
-### 1. Domain Layer (`pkg/domain/`)
-- **Entities**: Core business objects (Message, Tool, Connection, etc.)
-- **Repository Interfaces**: Abstract interfaces for data access
-- **Service Interfaces**: Abstract interfaces for business logic
+### 1. ドメイン層 (`pkg/domain/`)
+- **エンティティ** (`entity/`): コアビジネスオブジェクト（Message、Tool、Connection など）
+- **リポジトリ** (`repository/`): データアクセスの抽象インターフェース
+- **サービス** (`service/`): ビジネスロジックの抽象インターフェース
+- **設定** (`config/`): アプリケーション設定の構造体
+- **レスポンス** (`response/`): プロトコルレスポンスの構造体
 
-### 2. Use Case Layer (`pkg/usecase/`)
-- **Business Logic**: Application-specific business rules
-- **Orchestration**: Coordinates between different domain services
-- **Input/Output Ports**: Defines how the application interacts with external systems
+### 2. ユースケース層 (`pkg/usecase/`)
+- **ビジネスロジック**: アプリケーション固有のビジネスルール
+- **オーケストレーション**: 異なるドメインサービス間の調整
+- **入力/出力ポート**: アプリケーションが外部システムとどのように相互作用するかを定義
 
-### 3. Interface Layer (`pkg/interfaces/`)
-- **CLI Handler**: Command-line interface implementation
-- **HTTP Handler**: HTTP interface implementation (future)
-- **Controllers**: Handle user input and format output
+### 3. インターフェース層 (`pkg/interfaces/`)
+- **CLI ハンドラー**: コマンドラインインターフェースの実装
+- **HTTP ハンドラー**: HTTP インターフェースの実装（将来の拡張用）
+- **コントローラー**: ユーザー入力の処理と出力のフォーマット
 
-### 4. Infrastructure Layer (`pkg/infrastructure/`)
-- **MCP Repository**: WebSocket implementation for MCP protocol
-- **Config Repository**: File-based configuration storage
-- **External Services**: Database, external APIs, etc.
+### 4. インフラストラクチャ層 (`pkg/infrastructure/`)
+- **MCP リポジトリ**: MCP プロトコルの WebSocket 実装
+- **設定リポジトリ**: ファイルベースの設定ストレージ
+- **外部サービス**: データベース、外部 API など
 
-## Features
+## 機能
 
-- WebSocket-based communication with MCP servers
-- Support for MCP protocol version 2024-11-05
-- Configurable client settings
-- Graceful shutdown handling
-- Extensible message handler system
-- Clean Architecture design
-- Dependency injection
-- Separation of concerns
+- WebSocket ベースの MCP サーバーとの通信
+- MCP プロトコルバージョン 2024-11-05 のサポート
+- 設定可能なクライアント設定
+- グレースフルシャットダウン処理
+- 拡張可能なメッセージハンドラーシステム
+- クリーンアーキテクチャ設計
+- 依存性注入（Wire を使用）
+- 関心の分離
 
-## Installation
+## インストール
 
 ```bash
 git clone <repository-url>
@@ -49,26 +51,26 @@ cd go-mcp-client
 go mod tidy
 ```
 
-## Usage
+## 使用方法
 
-### Basic Usage
+### 基本的な使用方法
 
 ```bash
-# Run with default configuration
-go run cmd/main.go
+# デフォルト設定で実行
+go run cmd/mcpclient/main.go
 
-# Run with custom server URL
-go run cmd/main.go -server ws://localhost:3000
+# カスタムサーバーURLで実行
+go run cmd/mcpclient/main.go -server ws://localhost:3000
 
-# Run with custom config file
-go run cmd/main.go -config my-config.json
+# カスタム設定ファイルで実行
+go run cmd/mcpclient/main.go -config my-config.json
 ```
 
-### Configuration
+### 設定
 
-The client can be configured using a JSON configuration file. If no configuration file is provided, a default configuration will be created.
+クライアントは JSON 設定ファイルを使用して設定できます。設定ファイルが提供されない場合、デフォルト設定が作成されます。
 
-Example configuration (`config.json`):
+設定例 (`config.json`):
 
 ```json
 {
@@ -81,37 +83,54 @@ Example configuration (`config.json`):
 }
 ```
 
-### Command Line Flags
+### コマンドライン引数
 
-- `-config`: Path to configuration file (default: `config.json`)
-- `-server`: MCP server URL (overrides config file)
+- `-config`: 設定ファイルのパス（デフォルト: `config.json`）
+- `-server`: MCP サーバーURL（設定ファイルを上書き）
 
-## Project Structure
+## プロジェクト構造
 
 ```
 go-mcp-client/
 ├── cmd/
-│   └── main.go                    # Main entry point with DI setup
+│   └── mcpclient/                    # メインエントリポイント（DI設定付き）
+│       ├── main.go
+│       ├── wire.go                   # Wire設定
+│       └── wire_gen.go               # 自動生成されたDIコード
 ├── pkg/
-│   ├── domain/                    # Domain Layer
-│   │   ├── entity.go              # Core business entities
-│   │   ├── repository.go          # Repository interfaces
-│   │   └── service.go             # Service interfaces
-│   ├── usecase/                   # Use Case Layer
-│   │   ├── mcp_usecase.go         # MCP business logic
-│   │   └── config_usecase.go      # Configuration business logic
-│   ├── interfaces/                # Interface Layer
-│   │   └── handler.go             # CLI and HTTP handlers
-│   └── infrastructure/            # Infrastructure Layer
-│       ├── mcp_repository.go      # MCP WebSocket implementation
-│       └── config_repository.go   # File-based config storage
+│   ├── domain/                       # ドメイン層（最も内側）
+│   │   ├── entity/                   # エンティティ
+│   │   │   ├── message.go            # メッセージ関連
+│   │   │   ├── tool.go               # ツール関連
+│   │   │   ├── connection.go         # 接続関連
+│   │   │   └── info.go               # クライアント・サーバー情報
+│   │   ├── repository/               # リポジトリインターフェース
+│   │   │   ├── mcp_repository.go     # MCPリポジトリ
+│   │   │   └── config_repository.go  # 設定リポジトリ
+│   │   ├── service/                  # サービスインターフェース
+│   │   │   ├── mcp_service.go        # MCPサービス
+│   │   │   └── config_service.go     # 設定サービス
+│   │   ├── config/                   # 設定構造体
+│   │   │   └── config.go
+│   │   └── response/                 # レスポンス構造体
+│   │       └── response.go
+│   ├── usecase/                      # ユースケース層
+│   │   ├── mcp_usecase.go            # MCPビジネスロジック
+│   │   └── config_usecase.go         # 設定管理ビジネスロジック
+│   ├── interfaces/                   # インターフェース層
+│   │   └── handler.go                # CLI/HTTPハンドラー
+│   └── infrastructure/               # インフラストラクチャ層（最も外側）
+│       ├── mcp_repository.go         # WebSocket実装
+│       └── config_repository.go      # ファイルベース設定ストレージ
+├── test-server/                      # テスト用MCPサーバー
+│   └── main.go
 ├── go.mod
 └── README.md
 ```
 
-## Dependency Flow
+## 依存関係の流れ
 
-The dependency flow follows Clean Architecture principles:
+依存関係の流れはクリーンアーキテクチャの原則に従います：
 
 ```
 Interfaces → Use Cases → Domain ← Infrastructure
@@ -119,57 +138,91 @@ Interfaces → Use Cases → Domain ← Infrastructure
    (Input)   (Business)  (Core)    (External)
 ```
 
-- **Interfaces** depend on **Use Cases**
-- **Use Cases** depend on **Domain** interfaces
-- **Infrastructure** implements **Domain** interfaces
-- **Domain** has no dependencies on other layers
+- **インターフェース**は**ユースケース**に依存
+- **ユースケース**は**ドメイン**インターフェースに依存
+- **インフラストラクチャ**は**ドメイン**インターフェースを実装
+- **ドメイン**は他の層に依存しない
 
-## Development
+## 開発
 
-### Building
+### ビルド
 
 ```bash
-go build -o mcp-client cmd/main.go
+go build -o mcp-client ./cmd/mcpclient
 ```
 
-### Running Tests
+### テストの実行
 
 ```bash
 go test ./...
 ```
 
-### Adding New Features
+### 新しい機能の追加
 
-1. **Domain Layer**: Define entities and interfaces
-2. **Use Case Layer**: Implement business logic
-3. **Interface Layer**: Add user interface handlers
-4. **Infrastructure Layer**: Implement external integrations
+1. **ドメイン層**: エンティティとインターフェースを定義
+2. **ユースケース層**: ビジネスロジックを実装
+3. **インターフェース層**: ユーザーインターフェースハンドラーを追加
+4. **インフラストラクチャ層**: 外部統合を実装
 
-## MCP Protocol Support
+## MCP プロトコルサポート
 
-This client supports the following MCP protocol features:
+このクライアントは以下の MCP プロトコル機能をサポートしています：
 
-- Connection establishment and initialization
-- Message handling with custom handlers
-- Tool listing and calling (framework ready)
-- Ping/pong heartbeat mechanism
+- 接続確立と初期化
+- カスタムハンドラーによるメッセージ処理
+- ツール一覧とツール呼び出し（フレームワーク準備完了）
+- Ping/pong ハートビート機構
 
-## Benefits of Clean Architecture
+## 実際の使用例
 
-- **Testability**: Each layer can be tested independently
-- **Maintainability**: Clear separation of concerns
-- **Flexibility**: Easy to swap implementations
-- **Scalability**: Well-defined boundaries between components
-- **Independence**: Business logic is independent of external frameworks
+### 1. テストサーバーとの接続
 
-## Contributing
+```bash
+# テストサーバーを起動
+go run test-server/main.go
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes following Clean Architecture principles
-4. Add tests for new functionality
-5. Submit a pull request
+# 別のターミナルでクライアントを接続
+./mcp-client -server ws://localhost:3000
+```
 
-## License
+### 2. Claude Desktop の MCP サーバーとの接続
 
-[Add your license here] 
+```bash
+# Claude Desktop が起動している場合
+./mcp-client -server ws://localhost:3000
+```
+
+### 3. カスタム MCP サーバーとの接続
+
+```bash
+./mcp-client -server ws://your-mcp-server.com:3000
+```
+
+## クリーンアーキテクチャの利点
+
+- **テスタビリティ**: 各層を独立してテスト可能
+- **保守性**: 関心の分離による明確な責任分担
+- **柔軟性**: 実装の簡単な入れ替えが可能
+- **スケーラビリティ**: コンポーネント間の明確な境界
+- **独立性**: ビジネスロジックが外部フレームワークに依存しない
+
+## 今後の拡張予定
+
+1. **テストの追加**: 各層のユニットテスト
+2. **ログシステム**: 構造化ログの実装
+3. **エラーハンドリング**: より詳細なエラー処理
+4. **HTTP API**: RESTful API の追加
+5. **メトリクス**: パフォーマンス監視
+6. **設定検証**: より厳密な設定バリデーション
+
+## 貢献
+
+1. リポジトリをフォーク
+2. 機能ブランチを作成
+3. クリーンアーキテクチャの原則に従って変更を加える
+4. 新機能のテストを追加
+5. プルリクエストを送信
+
+## ライセンス
+
+[ライセンスを追加してください] 

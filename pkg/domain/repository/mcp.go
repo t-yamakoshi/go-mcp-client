@@ -7,8 +7,8 @@ import (
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/response"
 )
 
-// MCPRepository defines the interface for MCP operations
-type MCPRepository interface {
+// IFMCPRepository defines the interface for MCP operations
+type IFMCPRepository interface {
 	// Connection management
 	Connect(ctx context.Context, serverURL string) error
 	Disconnect() error

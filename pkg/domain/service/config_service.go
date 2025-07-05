@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/config"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/config"
 )
 
 // ConfigService defines the interface for configuration business logic

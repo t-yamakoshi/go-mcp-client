@@ -1,8 +1,0 @@
-{
-  "server_url": "ws://localhost:3000",
-  "client_info": {
-    "name": "go-mcp-client",
-    "version": "1.0.0"
-  },
-  "log_level": "info"
-}

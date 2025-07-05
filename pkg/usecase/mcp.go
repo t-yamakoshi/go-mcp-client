@@ -11,13 +11,12 @@ import (
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/entity"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/repository"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/response"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/infrastructure"
 )
 
-// MCPUseCase defines the interface for MCP business logic
-// (mockgen用コメント)
-//
-//go:generate mockgen -source=mcp_usecase.go -destination=mock_mcp_usecase.go -package=usecase
-type MCPUseCase interface {
+var _ IFMCPUsecase = (*MCPUsecase)(nil)
+
+type IFMCPUsecase interface {
 	EstablishConnection(ctx context.Context, serverURL string) error
 	CloseConnection(ctx context.Context) error
 	GetConnectionStatus(ctx context.Context) entity.ConnectionStatus
@@ -29,23 +28,20 @@ type MCPUseCase interface {
 	RegisterHandler(method string, handler MessageHandler)
 }
 
-// mcpUseCase implements the MCPUseCase interface
-type mcpUseCase struct {
-	mcpRepo    repository.MCPRepository
-	configRepo repository.ConfigRepository
+type MCPUsecase struct {
+	mcpRepo    repository.IFMCPRepository
+	configRepo repository.IFConfigRepository
 	mu         sync.RWMutex
 	handlers   map[string]MessageHandler
 	connection *entity.Connection
 }
 
-// MessageHandler is a function type for handling incoming messages
 type MessageHandler func(*entity.Message) error
 
-// NewMCPUseCase creates a new MCP use case
-func NewMCPUseCase(mcpRepo repository.MCPRepository, configRepo repository.ConfigRepository) MCPUseCase {
-	return &mcpUseCase{
-		mcpRepo:    mcpRepo,
+func NewMCPUsecase(configRepo *infrastructure.ConfigRepositoryImpl, mcpRepo *infrastructure.MCPRepositoryImpl) *MCPUsecase {
+	return &MCPUsecase{
 		configRepo: configRepo,
+		mcpRepo:    mcpRepo,
 		handlers:   make(map[string]MessageHandler),
 		connection: &entity.Connection{
 			ID:        uuid.New().String(),
@@ -57,7 +53,7 @@ func NewMCPUseCase(mcpRepo repository.MCPRepository, configRepo repository.Confi
 }
 
 // EstablishConnection establishes a connection to the MCP server
-func (uc *mcpUseCase) EstablishConnection(ctx context.Context, serverURL string) error {
+func (uc *MCPUsecase) EstablishConnection(ctx context.Context, serverURL string) error {
 	uc.mu.Lock()
 	defer uc.mu.Unlock()
 
@@ -82,7 +78,7 @@ func (uc *mcpUseCase) EstablishConnection(ctx context.Context, serverURL string)
 }
 
 // CloseConnection closes the connection to the MCP server
-func (uc *mcpUseCase) CloseConnection(ctx context.Context) error {
+func (uc *MCPUsecase) CloseConnection(ctx context.Context) error {
 	uc.mu.Lock()
 	defer uc.mu.Unlock()
 
@@ -98,14 +94,14 @@ func (uc *mcpUseCase) CloseConnection(ctx context.Context) error {
 }
 
 // GetConnectionStatus returns the current connection status
-func (uc *mcpUseCase) GetConnectionStatus(ctx context.Context) entity.ConnectionStatus {
+func (uc *MCPUsecase) GetConnectionStatus(ctx context.Context) entity.ConnectionStatus {
 	uc.mu.RLock()
 	defer uc.mu.RUnlock()
 	return uc.connection.Status
 }
 
 // InitializeProtocol initializes the MCP protocol
-func (uc *mcpUseCase) InitializeProtocol(ctx context.Context, clientInfo entity.ClientInfo) (*response.InitializeResponse, error) {
+func (uc *MCPUsecase) InitializeProtocol(ctx context.Context, clientInfo entity.ClientInfo) (*response.InitializeResponse, error) {
 	uc.mu.RLock()
 	if uc.connection.Status != entity.ConnectionStatusConnected {
 		uc.mu.RUnlock()
@@ -124,7 +120,7 @@ func (uc *mcpUseCase) InitializeProtocol(ctx context.Context, clientInfo entity.
 }
 
 // GetAvailableTools retrieves available tools from the server
-func (uc *mcpUseCase) GetAvailableTools(ctx context.Context) ([]entity.Tool, error) {
+func (uc *MCPUsecase) GetAvailableTools(ctx context.Context) ([]entity.Tool, error) {
 	uc.mu.RLock()
 	if uc.connection.Status != entity.ConnectionStatusConnected {
 		uc.mu.RUnlock()
@@ -142,7 +138,7 @@ func (uc *mcpUseCase) GetAvailableTools(ctx context.Context) ([]entity.Tool, err
 }
 
 // ExecuteTool executes a tool on the server
-func (uc *mcpUseCase) ExecuteTool(ctx context.Context, toolCall entity.ToolCall) (*entity.ToolResult, error) {
+func (uc *MCPUsecase) ExecuteTool(ctx context.Context, toolCall entity.ToolCall) (*entity.ToolResult, error) {
 	uc.mu.RLock()
 	if uc.connection.Status != entity.ConnectionStatusConnected {
 		uc.mu.RUnlock()
@@ -160,7 +156,7 @@ func (uc *mcpUseCase) ExecuteTool(ctx context.Context, toolCall entity.ToolCall)
 }
 
 // HandleIncomingMessage handles incoming messages from the server
-func (uc *mcpUseCase) HandleIncomingMessage(ctx context.Context, message *entity.Message) error {
+func (uc *MCPUsecase) HandleIncomingMessage(ctx context.Context, message *entity.Message) error {
 	uc.mu.RLock()
 	handler, exists := uc.handlers[message.Method]
 	uc.mu.RUnlock()
@@ -185,7 +181,7 @@ func (uc *mcpUseCase) HandleIncomingMessage(ctx context.Context, message *entity
 }
 
 // SendOutgoingMessage sends a message to the server
-func (uc *mcpUseCase) SendOutgoingMessage(ctx context.Context, message *entity.Message) error {
+func (uc *MCPUsecase) SendOutgoingMessage(ctx context.Context, message *entity.Message) error {
 	uc.mu.RLock()
 	if uc.connection.Status != entity.ConnectionStatusConnected {
 		uc.mu.RUnlock()
@@ -197,14 +193,14 @@ func (uc *mcpUseCase) SendOutgoingMessage(ctx context.Context, message *entity.M
 }
 
 // RegisterHandler registers a message handler for a specific method
-func (uc *mcpUseCase) RegisterHandler(method string, handler MessageHandler) {
+func (uc *MCPUsecase) RegisterHandler(method string, handler MessageHandler) {
 	uc.mu.Lock()
 	defer uc.mu.Unlock()
 	uc.handlers[method] = handler
 }
 
 // handlePing handles ping messages
-func (uc *mcpUseCase) handlePing(ctx context.Context, message *entity.Message) error {
+func (uc *MCPUsecase) handlePing(ctx context.Context, message *entity.Message) error {
 	log.Println("Received ping, sending pong")
 	pongMsg := &entity.Message{
 		ID:     message.ID,
@@ -214,14 +210,14 @@ func (uc *mcpUseCase) handlePing(ctx context.Context, message *entity.Message) e
 }
 
 // handleToolsList handles tools/list messages
-func (uc *mcpUseCase) handleToolsList(ctx context.Context, message *entity.Message) error {
+func (uc *MCPUsecase) handleToolsList(ctx context.Context, message *entity.Message) error {
 	log.Println("Received tools/list request")
 	// Implementation would depend on specific requirements
 	return nil
 }
 
 // handleToolsCall handles tools/call messages
-func (uc *mcpUseCase) handleToolsCall(ctx context.Context, message *entity.Message) error {
+func (uc *MCPUsecase) handleToolsCall(ctx context.Context, message *entity.Message) error {
 	log.Println("Received tools/call request")
 	// Implementation would depend on specific requirements
 	return nil

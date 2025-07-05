@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/config"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/config"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/repository"
 )
+
+var _ repository.IFConfigRepository = (*ConfigRepositoryImpl)(nil)
 
 // ConfigRepositoryImpl implements the config repository interface
 type ConfigRepositoryImpl struct {

@@ -12,18 +12,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/entity"
+	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/repository"
 	"github.com/t-yamakoshi/go-mcp-client/pkg/domain/response"
 )
 
-var _ IFMCPRepository = (*MCPRepositoryImpl)(nil)
-
-type IFMCPRepository interface {
-	Connect(ctx context.Context, serverURL string) error
-	Disconnect() error
-	IsConnected() bool
-	SendMessage(ctx context.Context, message *entity.Message) error
-	ReceiveMessage(ctx context.Context) (*entity.Message, error)
-}
+var _ repository.IFMCPRepository = (*MCPRepositoryImpl)(nil)
 
 // MCPRepositoryImpl implements the MCP repository interface
 type MCPRepositoryImpl struct {
